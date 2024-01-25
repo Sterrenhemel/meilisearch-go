@@ -31,6 +31,39 @@ type internalRequest struct {
 	functionName string
 }
 
+func (c *Client) RawRequest(req internalRequest) error {
+	internalError := &Error{
+		Endpoint:         req.endpoint,
+		Method:           req.method,
+		Function:         req.functionName,
+		RequestToString:  "empty request",
+		ResponseToString: "empty response",
+		MeilisearchApiError: meilisearchApiError{
+			Message: "empty Meilisearch message",
+		},
+		StatusCodeExpected: req.acceptedStatusCodes,
+	}
+
+	response := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(response)
+	err := c.sendRequest(&req, internalError, response)
+	if err != nil {
+		return err
+	}
+	internalError.StatusCode = response.StatusCode()
+
+	err = c.handleStatusCode(&req, response, internalError)
+	if err != nil {
+		return err
+	}
+
+	err = c.handleResponse(&req, response, internalError)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *Client) executeRequest(req internalRequest) error {
 	internalError := &Error{
 		Endpoint:         req.endpoint,

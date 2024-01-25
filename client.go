@@ -253,6 +253,33 @@ func (c *Client) CreateDump() (resp *TaskInfo, err error) {
 	return resp, nil
 }
 
+func (c *Client) MultiSearchWithResp(queries *MultiSearchRequest, resp interface{}) (interface{}, error) {
+	searchPostQueries := make(map[string][]map[string]interface{}, 1)
+
+	for i := 0; i < len(queries.Queries); i++ {
+		if queries.Queries[i].Limit == 0 {
+			queries.Queries[i].Limit = DefaultLimit
+		}
+		searchPostQueries["queries"] = append(searchPostQueries["queries"], searchPostRequestParams(queries.Queries[i].Query, &queries.Queries[i]))
+	}
+
+	req := internalRequest{
+		endpoint:            "/multi-search",
+		method:              http.MethodPost,
+		contentType:         contentTypeJSON,
+		withRequest:         searchPostQueries,
+		withResponse:        resp,
+		acceptedStatusCodes: []int{http.StatusOK},
+		functionName:        "MultiSearch",
+	}
+
+	if err := c.executeRequest(req); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 func (c *Client) MultiSearch(queries *MultiSearchRequest) (*MultiSearchResponse, error) {
 	resp := &MultiSearchResponse{}
 
