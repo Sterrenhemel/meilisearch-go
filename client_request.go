@@ -31,7 +31,7 @@ type internalRequest struct {
 	functionName string
 }
 
-func (c *Client) RawRequest(req internalRequest) error {
+func (c *Client) RawRequest(req internalRequest) (string, error) {
 	internalError := &Error{
 		Endpoint:         req.endpoint,
 		Method:           req.method,
@@ -48,20 +48,23 @@ func (c *Client) RawRequest(req internalRequest) error {
 	defer fasthttp.ReleaseResponse(response)
 	err := c.sendRequest(&req, internalError, response)
 	if err != nil {
-		return err
+		return "", err
 	}
 	internalError.StatusCode = response.StatusCode()
 
 	err = c.handleStatusCode(&req, response, internalError)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	err = c.handleResponse(&req, response, internalError)
+	// A json response is mandatory, so the response interface{} need to be unmarshal from the response payload.
+	rawBody := response.Body()
+	internalError.ResponseToString = string(rawBody)
+
 	if err != nil {
-		return err
+		return "", internalError.WithErrCode(ErrCodeResponseUnmarshalBody, err)
 	}
-	return nil
+	return string(rawBody), nil
 }
 
 func (c *Client) executeRequest(req internalRequest) error {
