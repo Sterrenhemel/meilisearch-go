@@ -253,7 +253,7 @@ func (c *Client) CreateDump() (resp *TaskInfo, err error) {
 	return resp, nil
 }
 
-func (c *Client) MultiSearchWithResp(queries *MultiSearchRequest, resp interface{}) (interface{}, error) {
+func (c *Client) MultiSearchWithResp(queries *MultiSearchRequest, resp interface{}) error {
 	searchPostQueries := make(map[string][]map[string]interface{}, 1)
 
 	for i := 0; i < len(queries.Queries); i++ {
@@ -274,10 +274,10 @@ func (c *Client) MultiSearchWithResp(queries *MultiSearchRequest, resp interface
 	}
 
 	if err := c.executeRequest(req); err != nil {
-		return nil, err
+		return err
 	}
 
-	return resp, nil
+	return nil
 }
 
 func (c *Client) MultiSearch(queries *MultiSearchRequest) (*MultiSearchResponse, error) {
